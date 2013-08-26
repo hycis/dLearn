@@ -11,16 +11,26 @@ class MLP(LearningModel):
     def __init__(self, 
                  input_space, 
                  layers, 
-                 learning_algorithm, 
                  loss_function, 
                  dataset, 
                  batch_size):
+        '''
+        input_space : 
+        layers : a list of layer object
+        learning_algorithm : a string in ['SGD', 'BGD'] where 'SGD' means Stochastic
+                            Gradient Descend, and 'BGD' means Batch Gradient Descend
+        loss_function : 
+        
+        '''
         pass
     
     def setup(self):
         pass
     
-    def train(self):
+    def train_all(self):
+        pass
+    
+    def train_batch(self, no_of_batches):
         pass
     
     def fprop(self, X):
@@ -42,6 +52,9 @@ class MLP(LearningModel):
         pass
     
     def loss(self, y, y_hat):
+        pass
+    
+    def save(self):
         pass
     
     
