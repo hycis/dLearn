@@ -3,38 +3,168 @@ Created on Aug 25, 2013
 
 @author: zhenzhou
 '''
-from dLearn.learning_model.model import LearningModel
+
+from dLearn.learning_model import LearningModel
+from dLearn.error_function import cross_entropy_theano
+from numpy import random, asarray, sqrt, inf, mean
+from theano import shared, tensor, function
+
+import time
+
+from pylearn2.datasets.mnist import MNIST
 
 
 class MLP(LearningModel):
     
-    def __init__(self, 
-                 input_space, 
+    def __init__(self,  
                  layers, 
-                 loss_function, 
-                 dataset, 
-                 batch_size):
+                 error_function=cross_entropy_theano,
+                 input_shape,
+                 train_set,
+                 valid_set, 
+                 test_set,  
+                 batch_size=100):
         '''
-        input_space : 
-        layers : a list of layer object
-        learning_algorithm : a string in ['SGD', 'BGD'] where 'SGD' means Stochastic
-                            Gradient Descend, and 'BGD' means Batch Gradient Descend
-        loss_function : 
+        params:
+            input_space - 
+            layers - a list of layer object
+            learning_algorithm - a string in ['SGD', 'BGD'] where 'SGD' means Stochastic
+                Gradient Descend, and 'BGD' means Batch Gradient Descend
+            error_function - the error function for calculating errors         
+        '''
         
-        '''
+        self.layers = layers
+        self.train_set = train_set
+        self.valid_set = valid_set
+        self.test_set = test_set
+        self.batch_size = batch_size
+        self.error_function = error_function
+        self.input_shape = input_shape
+        
+        self.learning_rate = 0.01
+        
+        self.params = []
+        for layer in self.layers:
+            self.params.append(layer.params)
+        
+        # self.train_set.iterator(mode, batch_size, num_batches, topo, targets, rng)
+    
+    def train(self):
+        
+        
         pass
+     
+    def train_batch(self, num_batches):
+        
+
+        
+        validation_freq = 1000 # the number of batches to train
+                                    # before the next validation
+        best_valid_loss = inf
+        best_iter = 0
+        batch = 0
+        while batch < num_batches:
+            batch = batch + 1
+            
+            for batch_index in xrange(num_batches):
+                batch_avg_cost = self.train_model(batch_index)
+                
+                if batch % validation_freq == 0:
+                    validation_losses = [self.valid_model(i) for i in
+                                         xrange(self.valid_set.shape[0])]
+                    this_valid_loss = mean(validation_losses)
+                    
+                    print ('batch number %i/%i, validation error %f %%' %
+                    (batch, num_batches, this_valid_loss * 100.))
+                    
+                    if this_valid_loss < best_valid_loss:
+                        best_valid_loss = this_valid_loss
+                        best_iter = batch
+                        
+                        test_losses = [self.test]
+                
+    
     
     def setup(self):
-        pass
+
+        batch_x_theano = tensor.dmatrix()
+        batch_y_theano = tensor.dmatrix()
+        
+        batch_y_hat_theano = self.batch_fprop_theano(batch_x_theano)
+        cost = self.cost_L1_theano(batch_y_theano=batch_y_theano, 
+                                   batch_y_hat_theano=batch_y_hat_theano)
+                
+        gparams = []
+        for param in self.params:
+            gparam = tensor.grad(cost, param)
+            gparams.append(gparam)
+        
+        updates = []
+        for param, gparam in zip(self.params, gparams):
+            updates.append((param, param - self.learning_rate*gparam))
+        
+        index = tensor.lscalar()
+        
+        self.train_model = function(inputs=[index], outputs=cost, updates=updates,
+                               givens={batch_x_theano: 
+                                       self.train_set.X[index*self.batch_size:
+                                                      (index+1)*self.batch_size],
+                                       batch_y_theano:
+                                       self.train_set.y[index*self.batch_size:
+                                                      (index+1)*self.batch_size]})
+        
+        self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
+                       givens={batch_x_theano: 
+                               self.valid_set.X[index*self.batch_size:
+                                              (index+1)*self.batch_size],
+                               batch_y_theano:
+                               self.valid_set.y[index*self.batch_size:
+                                              (index+1)*self.batch_size]})
+        
+        self.test_model = function(inputs=[index], outputs=cost, updates=updates,
+               givens={batch_x_theano: 
+                       self.test_set.X[index*self.batch_size:
+                                      (index+1)*self.batch_size],
+                       batch_y_theano:
+                       self.test_set.y[index*self.batch_size:
+                                      (index+1)*self.batch_size]})
+                   
+            
+    def cost_L1_theano(self, batch_y_theano, batch_y_hat_theano, L1_reg=10e-2):
+        cost = self.error_function(batch_y_theano, batch_y_hat_theano)
+        
+        L1 = tensor.dscalar()
+        for layer in self.layers:
+            L1 += abs(layer.W_theano).sum()
+        
+        #b1 = [abs(layer.b_theano).sum() for layer in self.layers]
+        cost += L1_reg * L1
+        return cost    
     
-    def train_all(self):
-        pass
+    def batch_fprop_theano(self, batch_input_theano):
+        batch_output_theano = []
+        for i in xrange(self.batch_size):
+            batch_output_theano.append(self.fprop_theano(batch_input_theano[i]))
+        
+        return batch_output_theano
     
-    def train_batch(self, no_of_batches):
-        pass
+    def fprop_theano(self, input_theano):
+        for layer in self.layers:
+            output_theano = layer.fprop_theano(input_theano)
+            input_theano = output_theano
+        
+        return output_theano
+            
+            
+    def batch_fprop(self, batch):
+        batch_input_theano = tensor.dmatrix()
+        f = function([batch_input_theano], self.batch_fprop_theano(batch_input_theano))
+        return f(batch)
     
-    def fprop(self, X):
-        pass
+    def fprop(self, x):
+        input_theano = tensor.dmatrix()
+        f = function([input_theano], self.fprop_theano(input_theano))
+        return f(x)
     
     def append_layer(self, layer):
         pass
