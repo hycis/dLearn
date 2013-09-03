@@ -1,1 +1,6 @@
-./dLearn/datasets/__init__.py ./dLearn/datasets/dataset ./dLearn/datasets/dataset.py ./dLearn/datasets/mnist.pkl
+./dLearn/datasets/__init__.py 
+./dLearn/datasets/dataset 
+./dLearn/datasets/dataset.py 
+./dLearn/datasets/mnist.pkl
+./test/*
+*.pyc
