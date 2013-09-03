@@ -51,37 +51,53 @@ class MLP(LearningModel):
     
     def train(self):
         
+        patience = 10000
+        validation_freq = 1000
         
-        pass
+        start_time = time.clock()
+        
+        n_train_batches = self.train_set.shape[0]
+        
+        while True:
+            
+            for batch_index in xrange(n_train_batches):
+                batch_avg_cost = self.train_model(batch_index)
+            
+        
+        
      
     def train_batch(self, num_batches):
         
 
-        
+        assert num_batches >= 10000, 'at least 10k batches'
         validation_freq = 1000 # the number of batches to train
                                     # before the next validation
         best_valid_loss = inf
         best_iter = 0
         batch = 0
         while batch < num_batches:
-            batch = batch + 1
+
+            batch_avg_cost = self.train_model(batch)
             
-            for batch_index in xrange(num_batches):
-                batch_avg_cost = self.train_model(batch_index)
+            if batch % validation_freq == 0:
+                validation_losses = [self.valid_model(i) for i in
+                                     xrange(self.valid_set.shape[0])]
+                this_valid_loss = mean(validation_losses)
                 
-                if batch % validation_freq == 0:
-                    validation_losses = [self.valid_model(i) for i in
-                                         xrange(self.valid_set.shape[0])]
-                    this_valid_loss = mean(validation_losses)
+                print ('batch number %i/%i, validation error %f %%' %
+                (batch, num_batches, this_valid_loss * 100.))
+                
+                if this_valid_loss < best_valid_loss:
+                    best_valid_loss = this_valid_loss
+                    best_iter = batch
                     
-                    print ('batch number %i/%i, validation error %f %%' %
-                    (batch, num_batches, this_valid_loss * 100.))
-                    
-                    if this_valid_loss < best_valid_loss:
-                        best_valid_loss = this_valid_loss
-                        best_iter = batch
-                        
-                        test_losses = [self.test]
+                    test_losses = [self.test(i) for i in 
+                                   xrange(self.test_set.shape[0])]
+                    this_test_loss = mean(test_losses)
+                    print ('batch number %i/%i, test error %f %%' %
+                    (batch, num_batches, this_test_loss * 100.))
+            
+            batch = batch + 1
                 
     
     
