@@ -53,33 +53,67 @@ class MLP(LearningModel):
         
         patience = 10000
         validation_freq = 1000
+        assert validation_freq < self.train_set.shape[0] / 10, 'at least 10 validations per epoch'
         
         start_time = time.clock()
         
         n_train_batches = self.train_set.shape[0]
+        best_valid_loss = inf
+        improve_threshold = 0.995
         
-        while True:
-            
+        epoch = 0
+        continue_training = True
+        while continue_training:
+            epoch += 1
+            # loop for one epoch
+            continue_training = False
             for batch_index in xrange(n_train_batches):
                 batch_avg_cost = self.train_model(batch_index)
+                
+                if batch_index + 1 % validation_freq == 0:
+                    validation_losses = [self.valid_model(i) for i
+                                         in xrange(self.valid_set.shape[0])]
+                    this_valid_loss = mean(validation_losses)
+                    print ('epoch %i, batch number %i/%i, validation error %f %%' %
+                           (epoch, batch_index, n_train_batches, this_valid_loss * 100.))          
+                    
+                    if this_valid_loss < best_valid_loss:
+                        best_valid_loss = this_valid_loss
+                        best_iter = [epoch, batch_index]
+                        
+                        test_losses = [self.test_model(i) for i 
+                                       in xrange(self.test_set.shape[0])]
+                        this_test_loss = mean(test_losses)
+                        
+                        print ('epoch %i, batch number %i/%i, test error %f %%' %
+                               (epoch, batch_index, n_train_batches, this_test_loss * 100.))    
+
+                        if best_valid_loss < improve_threshold * this_valid_loss:
+                            continue_training = True
+                            
+                        
+                
             
         
         
      
     def train_batch(self, num_batches):
         
-
         assert num_batches >= 10000, 'at least 10k batches'
         validation_freq = 1000 # the number of batches to train
                                     # before the next validation
         best_valid_loss = inf
         best_iter = 0
         batch = 0
+        batch_index = batch
         while batch < num_batches:
-
-            batch_avg_cost = self.train_model(batch)
             
-            if batch % validation_freq == 0:
+            if batch >= self.train_set.shape[0]:
+                batch_index = batch % self.train_set.shape[0]
+            
+            batch_avg_cost = self.train_model(batch_index)
+            
+            if batch + 1 % validation_freq == 0:
                 validation_losses = [self.valid_model(i) for i in
                                      xrange(self.valid_set.shape[0])]
                 this_valid_loss = mean(validation_losses)
@@ -98,8 +132,7 @@ class MLP(LearningModel):
                     (batch, num_batches, this_test_loss * 100.))
             
             batch = batch + 1
-                
-    
+            batch_index = batch                
     
     def setup(self):
 
@@ -130,20 +163,20 @@ class MLP(LearningModel):
                                                       (index+1)*self.batch_size]})
         
         self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
-                       givens={batch_x_theano: 
-                               self.valid_set.X[index*self.batch_size:
-                                              (index+1)*self.batch_size],
-                               batch_y_theano:
-                               self.valid_set.y[index*self.batch_size:
-                                              (index+1)*self.batch_size]})
+                               givens={batch_x_theano: 
+                                       self.valid_set.X[index*self.batch_size:
+                                                      (index+1)*self.batch_size],
+                                       batch_y_theano:
+                                       self.valid_set.y[index*self.batch_size:
+                                                      (index+1)*self.batch_size]})
         
         self.test_model = function(inputs=[index], outputs=cost, updates=updates,
-               givens={batch_x_theano: 
-                       self.test_set.X[index*self.batch_size:
-                                      (index+1)*self.batch_size],
-                       batch_y_theano:
-                       self.test_set.y[index*self.batch_size:
-                                      (index+1)*self.batch_size]})
+                               givens={batch_x_theano: 
+                                       self.test_set.X[index*self.batch_size:
+                                                      (index+1)*self.batch_size],
+                                       batch_y_theano:
+                                       self.test_set.y[index*self.batch_size:
+                                                      (index+1)*self.batch_size]})
                    
             
     def cost_L1_theano(self, batch_y_theano, batch_y_hat_theano, L1_reg=10e-2):
