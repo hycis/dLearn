@@ -9,6 +9,8 @@ from dLearn.error_function import cross_entropy_theano
 from numpy import random, asarray, sqrt, inf, mean
 from theano import shared, tensor, function
 
+import cPickle
+
 import time
 
 from pylearn2.datasets.mnist import MNIST
@@ -23,7 +25,8 @@ class MLP(LearningModel):
                  train_set,
                  valid_set, 
                  test_set,  
-                 batch_size=100):
+                 batch_size=100,
+                 learning_rate=0.01):
         '''
         params:
             input_space - 
@@ -40,12 +43,16 @@ class MLP(LearningModel):
         self.batch_size = batch_size
         self.error_function = error_function
         self.input_shape = input_shape
+        self.learning_rate = learning_rate
         
-        self.learning_rate = 0.01
-        
+        self.layers[0].prev_layer_shape = self.input_shape
+        for i in xrange(1, len(layers)):
+            self.layers[i].prev_layer_shape = self.layers[i-1].this_layer_shape 
+
         self.params = []
         for layer in self.layers:
             self.params.append(layer.params)
+            
         
         # self.train_set.iterator(mode, batch_size, num_batches, topo, targets, rng)
     
@@ -90,13 +97,7 @@ class MLP(LearningModel):
 
                         if best_valid_loss < improve_threshold * this_valid_loss:
                             continue_training = True
-                            
-                        
-                
-            
-        
-        
-     
+                              
     def train_batch(self, num_batches):
         
         assert num_batches >= 10000, 'at least 10k batches'
@@ -233,8 +234,12 @@ class MLP(LearningModel):
     def loss(self, y, y_hat):
         pass
     
-    def save(self):
-        pass
+    def save(self, save_path='model.pkl'):
+        file = open(save_path, 'wb')
+        cPickle.dump(self, file)
+        file.close()
+        
+        
     
     
     
