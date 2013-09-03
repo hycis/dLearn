@@ -2,5 +2,5 @@
 ./dLearn/datasets/dataset 
 ./dLearn/datasets/dataset.py 
 ./dLearn/datasets/mnist.pkl
-./test/*
+./test
 *.pyc
