@@ -18,8 +18,7 @@ from dLearn.learning_model.layer import Layer
 
 class Sigmoid(Layer):
     
-    def __init__(self, prev_layer_shape, this_layer_shape, W_range=[-0.5, 0.5], 
-                 b_range=[-0.5, 0.5], type=['NORMAL']):
+    def __init__(self, prev_layer_shape, this_layer_shape, W_range=[-0.5,0.5], b_range=[-0.5,0.5], type=['NORMAL']):
         '''
         params:
             prev_layer_shape: shape of previous layer in tuples of [n1, [n2]], 
@@ -40,28 +39,37 @@ class Sigmoid(Layer):
 
         self.prev_layer_shape = prev_layer_shape
         self.this_layer_shape = this_layer_shape
-        self.W_range = W_range
-        self.b_range = b_range
         self.type = type
-        
-        assert len(prev_layer_shape) is 2, 'give prev_layer_shape=[n1,n2]'
-        assert len(this_layer_shape) is 2, 'give this_layer_shape=[n1,n2]'
-        assert self.type[0] in ['NORMAL', 'DROPOUT', 'MAXOUT']
-        if self.type[0] is 'DROPOUT': 
-            assert self.type[1] > 0 and self.type[1] < 1 
         
         W_dim = self.this_layer_shape + self.prev_layer_shape
         b_dim = self.this_layer_shape
-        self.W_values = asarray(random.uniform(low=self.W_range[0],
-                                               high=self.W_range[1],
+        self.W_values = asarray(random.uniform(low=W_range[0],
+                                               high=W_range[1],
                                                size=(W_dim)))
 
-        self.b_values = asarray(random.uniform(low=self.b_range[0],
-                                               high=self.b_range[1],
+        self.b_values = asarray(random.uniform(low=b_range[0],
+                                               high=b_range[1],
                                                size=(b_dim)))
         
         self.W_theano = shared(self.W_values)
         self.b_theano = shared(self.b_values)
+        
+        self.params_theano = [self.W_theano, self.b_theano]
+        
+        #assert len(prev_layer_shape) is 2, 'give prev_layer_shape=[n1,n2]'
+        assert len(this_layer_shape) is 2, 'give this_layer_shape=[n1,n2]'
+        assert self.type[0] in ['NORMAL', 'DROPOUT', 'MAXOUT']
+        if self.type[0] is 'DROPOUT': 
+            assert self.type[1] > 0 and self.type[1] < 1  
+    
+        
+    def set_params(self, W, b):
+        self.W_values = W
+        self.b_values = b
+        self.W_theano = shared(self.W_values)
+        self.b_theano = shared(self.b_values)
+        
+        self.params_theano = [self.W_theano, self.b_theano]
         
     def fprop_theano(self, input_theano):
         

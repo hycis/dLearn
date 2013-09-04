@@ -18,13 +18,13 @@ from pylearn2.datasets.mnist import MNIST
 
 class MLP(LearningModel):
     
-    def __init__(self,  
+    def __init__(self,
+                 input_shape,  
                  layers, 
-                 error_function=cross_entropy_theano,
-                 input_shape,
                  train_set,
                  valid_set, 
-                 test_set,  
+                 test_set,
+                 error_function=cross_entropy_theano,  
                  batch_size=100,
                  learning_rate=0.01):
         '''
@@ -45,26 +45,73 @@ class MLP(LearningModel):
         self.input_shape = input_shape
         self.learning_rate = learning_rate
         
-        self.layers[0].prev_layer_shape = self.input_shape
-        for i in xrange(1, len(layers)):
-            self.layers[i].prev_layer_shape = self.layers[i-1].this_layer_shape 
-
-        self.params = []
-        for layer in self.layers:
-            self.params.append(layer.params)
-            
+        # setup the train_model, test_model, valid_model and params
+        self.__setup()
+     
+    def __setup(self):
         
-        # self.train_set.iterator(mode, batch_size, num_batches, topo, targets, rng)
-    
+        '''
+        setup the train_model, test_model, valid_model and params
+        '''
+             
+        self.params_theano = []
+        for layer in self.layers:
+            self.params_theano.append(layer.params_theano)
+
+        # x_{brc : batch, row, col}
+        batch_x_theano = tensor.dtensor3()
+        batch_y_theano = tensor.dtensor3()
+        
+        batch_y_hat_theano = self.batch_fprop_theano(batch_x_theano)
+        cost = self.cost_L1_theano(batch_y_theano=batch_y_theano, 
+                                   batch_y_hat_theano=batch_y_hat_theano)
+                
+        gparams = []
+        for param in self.params_theano:
+            gparam = tensor.grad(cost, param)
+            gparams.append(gparam)
+        
+        updates = []
+        for param, gparam in zip(self.params_theano, gparams):
+            updates.append((param, param - self.learning_rate*gparam))
+        
+        index = tensor.lscalar()
+        
+        self.train_model = function(inputs=[index], outputs=cost, updates=updates,
+                               givens={batch_x_theano: 
+                                       self.train_set[0][index*self.batch_size:
+                                                      (index+1)*self.batch_size],
+                                       batch_y_theano:
+                                       self.train_set[1][index*self.batch_size:
+                                                      (index+1)*self.batch_size]})
+        
+        self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
+                               givens={batch_x_theano: 
+                                       self.valid_set[0][index*self.batch_size:
+                                                      (index+1)*self.batch_size],
+                                       batch_y_theano:
+                                       self.valid_set[1][index*self.batch_size:
+                                                      (index+1)*self.batch_size]})
+        
+        self.test_model = function(inputs=[index], outputs=cost, updates=updates,
+                               givens={batch_x_theano: 
+                                       self.test_set[0][index*self.batch_size:
+                                                      (index+1)*self.batch_size],
+                                       batch_y_theano:
+                                       self.test_set[1][index*self.batch_size:
+                                                      (index+1)*self.batch_size]})
+            
     def train(self):
         
-        patience = 10000
         validation_freq = 1000
-        assert validation_freq < self.train_set.shape[0] / 10, 'at least 10 validations per epoch'
+        n_train_batch = self.train_set[0].shape[0]
+
+        
+        
+        assert validation_freq < n_train_batch / 10, 'at least 10 validations per epoch'
         
         start_time = time.clock()
         
-        n_train_batches = self.train_set.shape[0]
         best_valid_loss = inf
         improve_threshold = 0.995
         
@@ -74,7 +121,7 @@ class MLP(LearningModel):
             epoch += 1
             # loop for one epoch
             continue_training = False
-            for batch_index in xrange(n_train_batches):
+            for batch_index in xrange(n_train_batch):
                 batch_avg_cost = self.train_model(batch_index)
                 
                 if batch_index + 1 % validation_freq == 0:
@@ -82,7 +129,7 @@ class MLP(LearningModel):
                                          in xrange(self.valid_set.shape[0])]
                     this_valid_loss = mean(validation_losses)
                     print ('epoch %i, batch number %i/%i, validation error %f %%' %
-                           (epoch, batch_index, n_train_batches, this_valid_loss * 100.))          
+                           (epoch, batch_index, n_train_batch, this_valid_loss * 100.))          
                     
                     if this_valid_loss < best_valid_loss:
                         best_valid_loss = this_valid_loss
@@ -93,7 +140,7 @@ class MLP(LearningModel):
                         this_test_loss = mean(test_losses)
                         
                         print ('epoch %i, batch number %i/%i, test error %f %%' %
-                               (epoch, batch_index, n_train_batches, this_test_loss * 100.))    
+                               (epoch, batch_index, n_train_batch, this_test_loss * 100.))    
 
                         if best_valid_loss < improve_threshold * this_valid_loss:
                             continue_training = True
@@ -107,16 +154,19 @@ class MLP(LearningModel):
         best_iter = 0
         batch = 0
         batch_index = batch
+        n_train_batch = self.train_set[0].shape[0]
+        n_valid_batch = self.valid_set[0].shape[0]
+        n_test_batch = self.test_set[0].shape[0]
         while batch < num_batches:
             
-            if batch >= self.train_set.shape[0]:
-                batch_index = batch % self.train_set.shape[0]
+            if batch >= n_train_batch:
+                batch_index = batch % n_train_batch
             
             batch_avg_cost = self.train_model(batch_index)
             
             if batch + 1 % validation_freq == 0:
                 validation_losses = [self.valid_model(i) for i in
-                                     xrange(self.valid_set.shape[0])]
+                                     xrange(n_valid_batch)]
                 this_valid_loss = mean(validation_losses)
                 
                 print ('batch number %i/%i, validation error %f %%' %
@@ -127,7 +177,7 @@ class MLP(LearningModel):
                     best_iter = batch
                     
                     test_losses = [self.test(i) for i in 
-                                   xrange(self.test_set.shape[0])]
+                                   xrange(n_test_batch)]
                     this_test_loss = mean(test_losses)
                     print ('batch number %i/%i, test error %f %%' %
                     (batch, num_batches, this_test_loss * 100.))
@@ -135,49 +185,7 @@ class MLP(LearningModel):
             batch = batch + 1
             batch_index = batch                
     
-    def setup(self):
 
-        batch_x_theano = tensor.dmatrix()
-        batch_y_theano = tensor.dmatrix()
-        
-        batch_y_hat_theano = self.batch_fprop_theano(batch_x_theano)
-        cost = self.cost_L1_theano(batch_y_theano=batch_y_theano, 
-                                   batch_y_hat_theano=batch_y_hat_theano)
-                
-        gparams = []
-        for param in self.params:
-            gparam = tensor.grad(cost, param)
-            gparams.append(gparam)
-        
-        updates = []
-        for param, gparam in zip(self.params, gparams):
-            updates.append((param, param - self.learning_rate*gparam))
-        
-        index = tensor.lscalar()
-        
-        self.train_model = function(inputs=[index], outputs=cost, updates=updates,
-                               givens={batch_x_theano: 
-                                       self.train_set.X[index*self.batch_size:
-                                                      (index+1)*self.batch_size],
-                                       batch_y_theano:
-                                       self.train_set.y[index*self.batch_size:
-                                                      (index+1)*self.batch_size]})
-        
-        self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
-                               givens={batch_x_theano: 
-                                       self.valid_set.X[index*self.batch_size:
-                                                      (index+1)*self.batch_size],
-                                       batch_y_theano:
-                                       self.valid_set.y[index*self.batch_size:
-                                                      (index+1)*self.batch_size]})
-        
-        self.test_model = function(inputs=[index], outputs=cost, updates=updates,
-                               givens={batch_x_theano: 
-                                       self.test_set.X[index*self.batch_size:
-                                                      (index+1)*self.batch_size],
-                                       batch_y_theano:
-                                       self.test_set.y[index*self.batch_size:
-                                                      (index+1)*self.batch_size]})
                    
             
     def cost_L1_theano(self, batch_y_theano, batch_y_hat_theano, L1_reg=10e-2):
