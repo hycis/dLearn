@@ -4,6 +4,7 @@ from pylearn2.datasets.mnist import MNIST
 from dLearn.learning_model.layer.sigmoid import Sigmoid
 from dLearn.learning_model.mlp import MLP
 from dLearn.error_function import cross_entropy_theano
+from dLearn.datasets import Dataset
 
 from numpy import random, asarray, split
 
@@ -25,20 +26,19 @@ def main():
     new_train_setX, new_valid_setX = split(new_train_setX, [50000], axis=0)
     new_train_sety, new_valid_sety = split(new_train_sety, [50000], axis=0)
     
-    train_set = asarray([new_train_setX, new_train_sety])
-    valid_set = asarray([new_valid_setX, new_valid_sety])
-    test_set = asarray([test_set.X.reshape(10000,784,1), 
-                        test_set.y.reshape(10000,10,1)])
+    train_set = Dataset(X=new_train_setX, y=new_train_sety)
+    valid_set = Dataset(X=new_valid_setX, y=new_valid_sety)
+    test_set = Dataset(X=test_set.X.reshape(10000,784,1),
+                       y=test_set.y.reshape(10000,10,1))
     
-    input_shape = list(new_train_setX[0].shape)
-    
-    test
     
     ##################
     #BUILD THE LAYERS#
     ##################
-    h1 = Sigmoid(prev_layer_shape=input_shape, this_layer_shape=[1000,1])
-    h2 = Sigmoid(prev_layer_shape=h1.this_layer_shape, this_layer_shape=[1000,1])
+    input_shape = list(new_train_setX[0].shape)
+
+    h1 = Sigmoid(prev_layer_shape=input_shape, this_layer_shape=[100,1])
+    h2 = Sigmoid(prev_layer_shape=h1.this_layer_shape, this_layer_shape=[100,1])
     y_layer = Sigmoid(prev_layer_shape=h2.this_layer_shape, this_layer_shape=[10,1])
     
     mlp = MLP(input_shape=input_shape,

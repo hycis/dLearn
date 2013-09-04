@@ -83,25 +83,25 @@ class MLP(LearningModel):
         pdb.set_trace()
         self.train_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
-                                       self.train_set[0][index*self.batch_size:
+                                       self.train_set.X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
-                                       self.train_set[1][index*self.batch_size:
+                                       self.train_set.y[index*self.batch_size:
                                                       (index+1)*self.batch_size]})
         self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
-                                       self.valid_set[0][index*self.batch_size:
+                                       self.valid_set.X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
-                                       self.valid_set[1][index*self.batch_size:
+                                       self.valid_set.y[index*self.batch_size:
                                                       (index+1)*self.batch_size]})
         
         self.test_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
-                                       self.test_set[0][index*self.batch_size:
+                                       self.test_set.X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
-                                       self.test_set[1][index*self.batch_size:
+                                       self.test_set.y[index*self.batch_size:
                                                       (index+1)*self.batch_size]})
         
         import pdb
