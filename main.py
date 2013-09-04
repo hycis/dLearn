@@ -32,6 +32,8 @@ def main():
     
     input_shape = list(new_train_setX[0].shape)
     
+    test
+    
     ##################
     #BUILD THE LAYERS#
     ##################
