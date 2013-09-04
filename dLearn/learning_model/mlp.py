@@ -56,27 +56,31 @@ class MLP(LearningModel):
              
         self.params_theano = []
         for layer in self.layers:
-            self.params_theano.append(layer.params_theano)
+            self.params_theano += layer.params_theano
 
         # x_{brc : batch, row, col}
         batch_x_theano = tensor.dtensor3()
         batch_y_theano = tensor.dtensor3()
         
         batch_y_hat_theano = self.batch_fprop_theano(batch_x_theano)
+
         cost = self.cost_L1_theano(batch_y_theano=batch_y_theano, 
                                    batch_y_hat_theano=batch_y_hat_theano)
-                
+
+
         gparams = []
         for param in self.params_theano:
             gparam = tensor.grad(cost, param)
             gparams.append(gparam)
-        
+
         updates = []
         for param, gparam in zip(self.params_theano, gparams):
             updates.append((param, param - self.learning_rate*gparam))
         
         index = tensor.lscalar()
         
+        import pdb
+        pdb.set_trace()
         self.train_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
                                        self.train_set[0][index*self.batch_size:
@@ -84,7 +88,6 @@ class MLP(LearningModel):
                                        batch_y_theano:
                                        self.train_set[1][index*self.batch_size:
                                                       (index+1)*self.batch_size]})
-        
         self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
                                        self.valid_set[0][index*self.batch_size:
@@ -100,6 +103,9 @@ class MLP(LearningModel):
                                        batch_y_theano:
                                        self.test_set[1][index*self.batch_size:
                                                       (index+1)*self.batch_size]})
+        
+        import pdb
+        pdb.set_trace()
             
     def train(self):
         
@@ -189,7 +195,8 @@ class MLP(LearningModel):
                    
             
     def cost_L1_theano(self, batch_y_theano, batch_y_hat_theano, L1_reg=10e-2):
-        cost = self.error_function(batch_y_theano, batch_y_hat_theano)
+        
+        cost = self.error_function(batch_y_theano, batch_y_hat_theano) / self.batch_size
         
         L1 = tensor.dscalar()
         for layer in self.layers:
@@ -200,10 +207,11 @@ class MLP(LearningModel):
         return cost    
     
     def batch_fprop_theano(self, batch_input_theano):
-        batch_output_theano = []
+        batch_output_theano = tensor.dtensor3()
+        shape = batch_input_theano[0].shape
         for i in xrange(self.batch_size):
-            batch_output_theano.append(self.fprop_theano(batch_input_theano[i]))
-        
+            batch_output_theano = tensor.concatenate([batch_output_theano,
+                self.fprop_theano(batch_input_theano[i]).reshape((1,) + shape, ndim=3)], axis=0)
         return batch_output_theano
     
     def fprop_theano(self, input_theano):
@@ -237,9 +245,6 @@ class MLP(LearningModel):
         pass
     
     def get_layer_param(self, layer):
-        pass
-    
-    def loss(self, y, y_hat):
         pass
     
     def save(self, save_path='model.pkl'):
