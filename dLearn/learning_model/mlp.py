@@ -5,8 +5,8 @@ Created on Aug 25, 2013
 '''
 
 from dLearn.learning_model import LearningModel
-from dLearn.error_function import cross_entropy_theano
-from numpy import random, asarray, sqrt, inf, mean
+from dLearn.error_function import cross_entropy_theano, abs_error, loglikehood
+from numpy import random, asarray, sqrt, inf, mean, float64, float32
 from theano import shared, tensor, function, config
 
 import cPickle
@@ -25,7 +25,7 @@ class MLP(LearningModel):
                  train_set,
                  valid_set, 
                  test_set,
-                 error_function=cross_entropy_theano,  
+                 error_function=abs_error,  
                  batch_size=100,
                  learning_rate=0.01):
         '''
@@ -37,15 +37,19 @@ class MLP(LearningModel):
             error_function - the error function for calculating errors         
         '''
         
+
+        self.floatX = train_set[0].dtype
+        self.intX = train_set[1].dtype
         
         
         self.layers = layers
-        self.train_set_X = shared(train_set[0], type=config.floatX)
-        self.train_set_y = shared(train_set[1], type=config.floatX)
-        self.valid_set_X = shared(valid_set[0], type=config.floatX)
-        self.valid_set_y = shared(valid_set[1], type=config.floatX)
+        self.train_set_X = shared(train_set[0].astype(self.floatX))
+        self.train_set_y = shared(train_set[1].astype(self.intX))
+        self.valid_set_X = shared(valid_set[0].astype(self.floatX))
+        self.valid_set_y = shared(valid_set[1].astype(self.intX))
+        self.test_set_X = shared(test_set[0].astype(self.floatX))
+        self.test_set_y = shared(test_set[1].astype(self.intX))
 
-        self.test_set = test_set
         self.batch_size = batch_size
         self.error_function = error_function
         self.input_size = input_size
@@ -64,11 +68,18 @@ class MLP(LearningModel):
         for layer in self.layers:
             self.params_theano += layer.params_theano
 
-        batch_x_theano = tensor.fmatrix()
-        batch_y_theano = tensor.fmatrix()
+        batch_x_theano = tensor.matrix()
+        batch_y_theano = tensor.ivector()
         
         batch_y_hat_theano = self.fprop_theano(batch_x_theano)
 
+
+        error = -tensor.mean(tensor.log(batch_y_hat_theano)[tensor.arange(self.batch_size), batch_y_theano])
+        
+        f = function([batch_y_theano, batch_y_hat_theano], error)
+
+        import pdb
+        pdb.set_trace()
         cost = self.cost_L1_theano(batch_y_theano=batch_y_theano, 
                                    batch_y_hat_theano=batch_y_hat_theano)
 
@@ -83,31 +94,32 @@ class MLP(LearningModel):
             updates.append((param, param - self.learning_rate*gparam))
         
         index = tensor.lscalar()
-        
+        #import pdb
+        #pdb.set_trace()
         self.train_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
-                                       self.train_set.X[index*self.batch_size:
+                                       self.train_set_X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
-                                       self.train_set.y[index*self.batch_size:
+                                       self.train_set_y[index*self.batch_size:
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
         
         self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
-                                       self.valid_set.X[index*self.batch_size:
+                                       self.valid_set_X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
-                                       self.valid_set.y[index*self.batch_size:
+                                       self.valid_set_y[index*self.batch_size:
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
 
         self.test_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
-                                       self.test_set.X[index*self.batch_size:
+                                       self.test_set_X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
-                                       self.test_set.y[index*self.batch_size:
+                                       self.test_set_y[index*self.batch_size:
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
             
@@ -166,9 +178,9 @@ class MLP(LearningModel):
         best_iter = 0
         batch = 1
         batch_index = batch - 1
-        n_train_batch = self.train_set.X.eval().size[0]
-        n_valid_batch = self.valid_set.X.eval().size[0]
-        n_test_batch = self.test_set.X.eval().size[0]
+        n_train_batch = self.train_set_X.eval().shape[0]
+        n_valid_batch = self.valid_set_X.eval().shape[0]
+        n_test_batch = self.test_set_X.eval().shape[0]
         while batch < num_batches:
              
             batch_avg_cost = self.train_model(batch_index)
@@ -216,7 +228,7 @@ class MLP(LearningModel):
         return output_theano
     
     def fprop(self, x):
-        input_theano = tensor.fmatrix()
+        input_theano = tensor.dmatrix()
         f = function([input_theano], self.fprop_theano(input_theano))
         return f(x)
     

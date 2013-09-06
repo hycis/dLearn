@@ -11,7 +11,7 @@ Created on Aug 25, 2013
 @author: zhenzhou
 '''
 from theano import shared, config, function, tensor
-from numpy import random, asarray, float32, float64
+from numpy import random, asarray
 
 
 from dLearn.learning_model.layer import Layer
@@ -47,11 +47,13 @@ class Sigmoid(Layer):
         
         self.W_values = asarray(random.uniform(low=W_range[0],
                                                high=W_range[1],
-                                               size=(W_dim)))
+                                               size=(W_dim)),
+                                               dtype=config.floatX)
 
         self.b_values = asarray(random.uniform(low=b_range[0],
                                                high=b_range[1],
-                                               size=(b_dim)))
+                                               size=(b_dim)), 
+                                               dtype=config.floatX)
         
         self.W_theano = shared(self.W_values)
         self.b_theano = shared(self.b_values)
@@ -59,7 +61,7 @@ class Sigmoid(Layer):
         self.params_theano = [self.W_theano, self.b_theano]
         
         #assert len(prev_layer_size) is 2, 'give prev_layer_size=[n1,n2]'
-        assert len(this_layer_size) is 2, 'give this_layer_size=[n1,n2]'
+        #assert len(this_layer_size) is 2, 'give this_layer_size=[n1,n2]'
         assert self.type[0] in ['NORMAL', 'DROPOUT', 'MAXOUT']
         if self.type[0] is 'DROPOUT': 
             assert self.type[1] > 0 and self.type[1] < 1  
@@ -89,7 +91,7 @@ class Sigmoid(Layer):
         params: X - numpy ndarray
         return: a numpy ndarray after applying softmax(X)
         '''
-        input_theano = tensor.fmatrix()      
+        input_theano = tensor.matrix()      
         f = function(inputs=[input_theano], outputs=self.fprop_theano(input_theano))
         return f(X)
         

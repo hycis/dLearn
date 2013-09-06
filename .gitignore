@@ -4,4 +4,4 @@
 ./dLearn/datasets/mnist.pkl
 *.pyc
 test/
-
+*.DS_Store
