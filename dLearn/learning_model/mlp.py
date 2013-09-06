@@ -7,7 +7,7 @@ Created on Aug 25, 2013
 from dLearn.learning_model import LearningModel
 from dLearn.error_function import cross_entropy_theano
 from numpy import random, asarray, sqrt, inf, mean
-from theano import shared, tensor, function
+from theano import shared, tensor, function, config
 
 import cPickle
 
@@ -16,10 +16,11 @@ import time
 from pylearn2.datasets.mnist import MNIST
 
 
+
 class MLP(LearningModel):
     
     def __init__(self,
-                 input_shape,  
+                 input_size,  
                  layers, 
                  train_set,
                  valid_set, 
@@ -36,13 +37,18 @@ class MLP(LearningModel):
             error_function - the error function for calculating errors         
         '''
         
+        
+        
         self.layers = layers
-        self.train_set = train_set
-        self.valid_set = valid_set
+        self.train_set_X = shared(train_set[0], type=config.floatX)
+        self.train_set_y = shared(train_set[1], type=config.floatX)
+        self.valid_set_X = shared(valid_set[0], type=config.floatX)
+        self.valid_set_y = shared(valid_set[1], type=config.floatX)
+
         self.test_set = test_set
         self.batch_size = batch_size
         self.error_function = error_function
-        self.input_shape = input_shape
+        self.input_size = input_size
         self.learning_rate = learning_rate
         
         # setup the train_model, test_model, valid_model and params
@@ -53,16 +59,15 @@ class MLP(LearningModel):
         '''
         setup the train_model, test_model, valid_model and params
         '''
-             
+          
         self.params_theano = []
         for layer in self.layers:
             self.params_theano += layer.params_theano
 
-        # x_{brc : batch, row, col}
-        batch_x_theano = tensor.dtensor3()
-        batch_y_theano = tensor.dtensor3()
+        batch_x_theano = tensor.fmatrix()
+        batch_y_theano = tensor.fmatrix()
         
-        batch_y_hat_theano = self.batch_fprop_theano(batch_x_theano)
+        batch_y_hat_theano = self.fprop_theano(batch_x_theano)
 
         cost = self.cost_L1_theano(batch_y_theano=batch_y_theano, 
                                    batch_y_hat_theano=batch_y_hat_theano)
@@ -79,38 +84,37 @@ class MLP(LearningModel):
         
         index = tensor.lscalar()
         
-        import pdb
-        pdb.set_trace()
         self.train_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
                                        self.train_set.X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
                                        self.train_set.y[index*self.batch_size:
-                                                      (index+1)*self.batch_size]})
+                                                      (index+1)*self.batch_size]},
+                                    allow_input_downcast=True)
+        
         self.valid_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
                                        self.valid_set.X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
                                        self.valid_set.y[index*self.batch_size:
-                                                      (index+1)*self.batch_size]})
-        
+                                                      (index+1)*self.batch_size]},
+                                    allow_input_downcast=True)
+
         self.test_model = function(inputs=[index], outputs=cost, updates=updates,
                                givens={batch_x_theano: 
                                        self.test_set.X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
                                        batch_y_theano:
                                        self.test_set.y[index*self.batch_size:
-                                                      (index+1)*self.batch_size]})
-        
-        import pdb
-        pdb.set_trace()
+                                                      (index+1)*self.batch_size]},
+                                    allow_input_downcast=True)
             
     def train(self):
         
         validation_freq = 1000
-        n_train_batch = self.train_set[0].shape[0]
+        n_train_batch = self.train_set[0].size[0]
 
         
         
@@ -132,7 +136,7 @@ class MLP(LearningModel):
                 
                 if batch_index + 1 % validation_freq == 0:
                     validation_losses = [self.valid_model(i) for i
-                                         in xrange(self.valid_set.shape[0])]
+                                         in xrange(self.valid_set.size[0])]
                     this_valid_loss = mean(validation_losses)
                     print ('epoch %i, batch number %i/%i, validation error %f %%' %
                            (epoch, batch_index, n_train_batch, this_valid_loss * 100.))          
@@ -142,7 +146,7 @@ class MLP(LearningModel):
                         best_iter = [epoch, batch_index]
                         
                         test_losses = [self.test_model(i) for i 
-                                       in xrange(self.test_set.shape[0])]
+                                       in xrange(self.test_set.size[0])]
                         this_test_loss = mean(test_losses)
                         
                         print ('epoch %i, batch number %i/%i, test error %f %%' %
@@ -156,21 +160,21 @@ class MLP(LearningModel):
         assert num_batches >= 10000, 'at least 10k batches'
         validation_freq = 1000 # the number of batches to train
                                     # before the next validation
+
+        
         best_valid_loss = inf
         best_iter = 0
-        batch = 0
-        batch_index = batch
-        n_train_batch = self.train_set[0].shape[0]
-        n_valid_batch = self.valid_set[0].shape[0]
-        n_test_batch = self.test_set[0].shape[0]
+        batch = 1
+        batch_index = batch - 1
+        n_train_batch = self.train_set.X.eval().size[0]
+        n_valid_batch = self.valid_set.X.eval().size[0]
+        n_test_batch = self.test_set.X.eval().size[0]
         while batch < num_batches:
-            
-            if batch >= n_train_batch:
-                batch_index = batch % n_train_batch
-            
+             
             batch_avg_cost = self.train_model(batch_index)
             
-            if batch + 1 % validation_freq == 0:
+            if (batch) % validation_freq == 0:
+                print 'validation in progress'
                 validation_losses = [self.valid_model(i) for i in
                                      xrange(n_valid_batch)]
                 this_valid_loss = mean(validation_losses)
@@ -182,37 +186,27 @@ class MLP(LearningModel):
                     best_valid_loss = this_valid_loss
                     best_iter = batch
                     
-                    test_losses = [self.test(i) for i in 
+                    test_losses = [self.test_model(i) for i in 
                                    xrange(n_test_batch)]
                     this_test_loss = mean(test_losses)
                     print ('batch number %i/%i, test error %f %%' %
-                    (batch, num_batches, this_test_loss * 100.))
-            
+                    (batch, num_batches, this_test_loss * 100.))            
             batch = batch + 1
-            batch_index = batch                
+            batch_index = batch % n_train_batch - 1              
     
 
                    
             
     def cost_L1_theano(self, batch_y_theano, batch_y_hat_theano, L1_reg=10e-2):
         
-        cost = self.error_function(batch_y_theano, batch_y_hat_theano) / self.batch_size
+        cost = self.error_function(batch_y_theano, batch_y_hat_theano, self.batch_size)
         
-        L1 = tensor.dscalar()
+        L1 = shared(0)
         for layer in self.layers:
-            L1 += abs(layer.W_theano).sum()
+            L1 += tensor.abs_(layer.W_theano).sum()
         
-        #b1 = [abs(layer.b_theano).sum() for layer in self.layers]
         cost += L1_reg * L1
         return cost    
-    
-    def batch_fprop_theano(self, batch_input_theano):
-        batch_output_theano = tensor.dtensor3()
-        shape = batch_input_theano[0].shape
-        for i in xrange(self.batch_size):
-            batch_output_theano = tensor.concatenate([batch_output_theano,
-                self.fprop_theano(batch_input_theano[i]).reshape((1,) + shape, ndim=3)], axis=0)
-        return batch_output_theano
     
     def fprop_theano(self, input_theano):
         for layer in self.layers:
@@ -220,15 +214,9 @@ class MLP(LearningModel):
             input_theano = output_theano
         
         return output_theano
-            
-            
-    def batch_fprop(self, batch):
-        batch_input_theano = tensor.dmatrix()
-        f = function([batch_input_theano], self.batch_fprop_theano(batch_input_theano))
-        return f(batch)
     
     def fprop(self, x):
-        input_theano = tensor.dmatrix()
+        input_theano = tensor.fmatrix()
         f = function([input_theano], self.fprop_theano(input_theano))
         return f(x)
     
