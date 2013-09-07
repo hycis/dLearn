@@ -16,7 +16,7 @@ from numpy import random, asarray, zeros
 
 from dLearn.learning_model.layer import Layer
 
-class Softmax(Layer):
+class Tanh(Layer):
     
     def __init__(self, prev_layer_size, this_layer_size, W_range=[-0.5,0.5], b_range=[-0.5,0.5], type=['NORMAL']):
         '''
@@ -84,7 +84,7 @@ class Softmax(Layer):
         elif self.type[0] is 'MAXOUT':
             pass
         
-        return tensor.nnet.softmax(output_theano)
+        return tensor.tanh(output_theano)
         
     def fprop(self, X):
         '''

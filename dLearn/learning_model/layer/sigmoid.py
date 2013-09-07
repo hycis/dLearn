@@ -11,7 +11,7 @@ Created on Aug 25, 2013
 @author: zhenzhou
 '''
 from theano import shared, config, function, tensor
-from numpy import random, asarray
+from numpy import random, asarray, zeros
 
 
 from dLearn.learning_model.layer import Layer
@@ -47,13 +47,13 @@ class Sigmoid(Layer):
         
         self.W_values = asarray(random.uniform(low=W_range[0],
                                                high=W_range[1],
-                                               size=(W_dim)),
-                                               dtype=config.floatX)
+                                               size=W_dim),
+                                dtype=config.floatX)
 
-        self.b_values = asarray(random.uniform(low=b_range[0],
-                                               high=b_range[1],
-                                               size=(b_dim)), 
-                                               dtype=config.floatX)
+        self.b_values = asarray(random.uniform(low=W_range[0],
+                                               high=W_range[1], 
+                                               size=b_dim), 
+                                dtype=config.floatX)
         
         self.W_theano = shared(self.W_values)
         self.b_theano = shared(self.b_values)

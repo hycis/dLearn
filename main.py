@@ -2,6 +2,9 @@
 from pylearn2.datasets.mnist import MNIST
 
 from dLearn.learning_model.layer.sigmoid import Sigmoid
+from dLearn.learning_model.layer.softmax import Softmax
+from dLearn.learning_model.layer.tanh import Tanh
+
 from dLearn.learning_model.mlp import MLP
 from dLearn.error_function import cross_entropy_theano, loglikehood
 from dLearn.datasets import Dataset
@@ -33,17 +36,18 @@ def main():
     print 'build the layers'
     input_size = len(train_setX[0])
 
-    h1 = Sigmoid(prev_layer_size=input_size, this_layer_size=10)
-    #h2 = Sigmoid(prev_layer_size=h1.this_layer_size, this_layer_size=[100,1])
+    h1 = Tanh(prev_layer_size=input_size, this_layer_size=500)
+    output_layer = Softmax(prev_layer_size=h1.this_layer_size, this_layer_size=10, W_range=[0,0], b_range=[0,0])
     #y_layer = Sigmoid(prev_layer_size=h2.this_layer_size, this_layer_size=[10,1])
     
     print 'build the model'
     mlp = MLP(input_size=input_size,
-              layers=[h1],
+              layers=[h1, output_layer],
               train_set=[train_setX, train_sety],
               valid_set=[valid_setX, valid_sety],
               test_set=[test_set.X, test_set.y],
-              error_function=loglikehood )
+              error_function=loglikehood,
+              batch_size=20)
 
     mlp.train_batch(100000)
     
