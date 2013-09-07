@@ -5,7 +5,7 @@ Created on Aug 25, 2013
 '''
 
 from dLearn.learning_model import LearningModel
-from dLearn.error_function import cross_entropy_theano, abs_error, loglikehood
+from dLearn.error_function import loglikehood
 from numpy import random, asarray, sqrt, inf, mean, float64, float32
 from theano import shared, tensor, function, config
 

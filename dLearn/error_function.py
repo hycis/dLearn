@@ -18,8 +18,6 @@ def cross_entropy_theano(batch_y_theano, batch_y_hat_theano):
     return (-batch_y_theano * tensor.log(batch_y_hat_theano) - 
             (1-batch_y_theano) * tensor.log(1-batch_y_hat_theano)).sum() / batch_y_theano.shape[0]
 
-def abs_error(batch_y_theano, batch_y_hat_theano, batch_size):
-    return tensor.mean(tensor.neq(batch_y_theano, tensor.argmax(batch_y_hat_theano, axis=1)))
 
 def mse(y_batch, y_hat_batch):
 
