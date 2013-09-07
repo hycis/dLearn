@@ -18,7 +18,9 @@ from dLearn.learning_model.layer import Layer
 
 class Softmax(Layer):
     
-    def __init__(self, prev_layer_size, this_layer_size, W_range=[-0.5,0.5], b_range=[-0.5,0.5], type=['NORMAL']):
+    def __init__(self, prev_layer_size, this_layer_size, 
+                 W_range=[-0.5,0.5], b_range=[-0.5,0.5], 
+                 type=['NORMAL']):
         '''
         params:
             prev_layer_size: size of previous layer in tuples of [n1, [n2]], 

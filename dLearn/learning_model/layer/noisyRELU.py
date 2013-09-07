@@ -6,7 +6,7 @@ Created on Aug 25, 2013
 @author: zhenzhou
 '''
 from theano import shared, config, function, tensor
-from numpy import random, asarray, zeros
+from numpy import random, asarray, zeros, log, count_nonzero
 
 
 from dLearn.learning_model.layer import Layer
@@ -15,7 +15,7 @@ class NoisyRELU(Layer):
     
     def __init__(self, prev_layer_size, this_layer_size, 
                  W_range=[-0.5,0.5], b_range=[-0.5,0.5], 
-                 type=['NORMAL']):
+                 type=['NORMAL'], noise_factor = 1):
         '''
         params:
             prev_layer_size: size of previous layer in tuples of [n1, [n2]], 
@@ -38,6 +38,7 @@ class NoisyRELU(Layer):
         self.this_layer_size = this_layer_size
         self.type = type
         
+        self.randseed = 1
         
         W_dim = [self.prev_layer_size, self.this_layer_size]
         b_dim = self.this_layer_size
@@ -54,6 +55,8 @@ class NoisyRELU(Layer):
         
         self.W_theano = shared(self.W_values)
         self.b_theano = shared(self.b_values)
+        
+        self.noise_factor = noise_factor
         
         self.params_theano = [self.W_theano, self.b_theano]
         
@@ -74,14 +77,22 @@ class NoisyRELU(Layer):
         
     def fprop_theano(self, input_theano):
         
+        u = random.uniform(low=0.001, high=0.999, size = self.this_layer_size)
+        
+        
+        noise = log(u/(1-u))
+        
+        
+        
         if self.type[0] is 'NORMAL':
-            output_theano = tensor.dot(input_theano, self.W_theano) + self.b_theano
+            output_theano = tensor.dot(input_theano, self.W_theano) + self.b_theano + self.noise_factor * noise
         elif self.type[0] is 'DROPOUT':
             pass
         elif self.type[0] is 'MAXOUT':
             pass
         
-        return tensor.nnet.softmax(output_theano)
+        return tensor.maximum(0, output_theano)
+         
         
     def fprop(self, X):
         '''

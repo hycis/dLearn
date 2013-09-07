@@ -3,6 +3,8 @@ from pylearn2.datasets.mnist import MNIST
 
 from dLearn.learning_model.layer.sigmoid import Sigmoid
 from dLearn.learning_model.layer.softmax import Softmax
+from dLearn.learning_model.layer.noisyRELU import NoisyRELU
+
 from dLearn.learning_model.layer.tanh import Tanh
 
 from dLearn.learning_model.mlp import MLP
@@ -36,7 +38,7 @@ def main():
     print 'build the layers'
     input_size = len(train_setX[0])
 
-    h1 = Sigmoid(prev_layer_size=input_size, this_layer_size=500)
+    h1 = NoisyRELU(prev_layer_size=input_size, this_layer_size=1000, noise_factor=1)
     output_layer = Softmax(prev_layer_size=h1.this_layer_size, this_layer_size=10, W_range=[0,0], b_range=[0,0])
     #y_layer = Sigmoid(prev_layer_size=h2.this_layer_size, this_layer_size=[10,1])
     
@@ -49,6 +51,7 @@ def main():
               error_function=loglikehood,
               batch_size=20)
 
+    print 'start training'
     mlp.train_batch(100000)
     
 if __name__ == '__main__':

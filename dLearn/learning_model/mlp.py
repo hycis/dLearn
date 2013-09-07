@@ -60,9 +60,9 @@ class MLP(LearningModel):
         self.L2_reg = L2_reg
         
         # setup the train_model, test_model, valid_model and params
-        self.__setup()
+        self._setup_models()
      
-    def __setup(self):
+    def _setup_models(self):
         
         '''
         setup the train_model, test_model, valid_model and params
@@ -75,19 +75,12 @@ class MLP(LearningModel):
         batch_x_theano = tensor.matrix(dtype=self.floatX)
         batch_y_theano = tensor.vector(dtype=self.intX)
         
-        batch_y_hat_theano = self.fprop_theano(batch_x_theano)
+        batch_y_hat_theano = self._fprop_theano(batch_x_theano)
 
-
-        #error = -tensor.mean(tensor.log(batch_y_hat_theano)[tensor.arange(batch_y_theano.shape[0]), batch_y_theano])
-        
-        #f = function([batch_x_theano, batch_y_theano], error)
-
-        #import pdb
-        #pdb.set_trace()
-        cost = self.cost_L1_L2_theano(batch_y_theano=batch_y_theano, 
+        cost = self._cost_L1_L2_theano(batch_y_theano=batch_y_theano, 
                                    batch_y_hat_theano=batch_y_hat_theano)
         
-        error = self.error(batch_y_theano=batch_y_theano, 
+        pred_error = self._pred_error(batch_y_theano=batch_y_theano, 
                            batch_y_hat_theano=batch_y_hat_theano)
 
 
@@ -101,9 +94,8 @@ class MLP(LearningModel):
             updates.append((param, param - self.learning_rate*gparam))
         
         index = tensor.lscalar()
-        #import pdb
-        #pdb.set_trace()
-        self.train_model = function(inputs=[index], outputs=error, updates=updates,
+
+        self.train_model = function(inputs=[index], outputs=pred_error, updates=updates,
                                givens={batch_x_theano: 
                                        self.train_set_X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
@@ -112,7 +104,7 @@ class MLP(LearningModel):
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
         
-        self.valid_model = function(inputs=[index], outputs=error,
+        self.valid_model = function(inputs=[index], outputs=pred_error,
                                givens={batch_x_theano: 
                                        self.valid_set_X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
@@ -121,7 +113,7 @@ class MLP(LearningModel):
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
 
-        self.test_model = function(inputs=[index], outputs=error,
+        self.test_model = function(inputs=[index], outputs=pred_error,
                                givens={batch_x_theano: 
                                        self.test_set_X[index*self.batch_size:
                                                       (index+1)*self.batch_size],
@@ -194,7 +186,7 @@ class MLP(LearningModel):
         n_test_batch = self.test_set_X.eval().shape[0] / self.batch_size
         while batch < num_batches:
              
-            batch_avg_cost = self.train_model(batch_index)
+            batch_avg_loss = self.train_model(batch_index)
             
             if (batch) % validation_freq == 0:
                 print 'validation in progress'
@@ -235,7 +227,7 @@ class MLP(LearningModel):
 
                    
             
-    def cost_L1_L2_theano(self, batch_y_theano, batch_y_hat_theano):
+    def _cost_L1_L2_theano(self, batch_y_theano, batch_y_hat_theano):
         
         error = self.error_function(batch_y_theano, batch_y_hat_theano)
         
@@ -249,11 +241,11 @@ class MLP(LearningModel):
         cost = error + self.L1_reg * L1 + self.L2_reg * L2
         return cost    
     
-    def error(self, batch_y_theano, batch_y_hat_theano):
+    def _pred_error(self, batch_y_theano, batch_y_hat_theano):
         return tensor.mean(tensor.neq(batch_y_theano,
                    tensor.argmax(batch_y_hat_theano, axis=1)))
     
-    def fprop_theano(self, input_theano):
+    def _fprop_theano(self, input_theano):
         for layer in self.layers:
             output_theano = layer.fprop_theano(input_theano)
             input_theano = output_theano
