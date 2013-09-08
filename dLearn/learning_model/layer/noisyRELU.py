@@ -37,9 +37,7 @@ class NoisyRELU(Layer):
         self.prev_layer_size = prev_layer_size
         self.this_layer_size = this_layer_size
         self.type = type
-        
-        self.randseed = 1
-        
+                
         W_dim = [self.prev_layer_size, self.this_layer_size]
         b_dim = self.this_layer_size
         
@@ -78,11 +76,7 @@ class NoisyRELU(Layer):
     def fprop_theano(self, input_theano):
         
         u = random.uniform(low=0.001, high=0.999, size = self.this_layer_size)
-        
-        
         noise = log(u/(1-u))
-        
-        
         
         if self.type[0] is 'NORMAL':
             output_theano = tensor.dot(input_theano, self.W_theano) + self.b_theano + self.noise_factor * noise
@@ -90,10 +84,12 @@ class NoisyRELU(Layer):
             pass
         elif self.type[0] is 'MAXOUT':
             pass
-        
+                
         return tensor.maximum(0, output_theano)
-         
-        
+    
+    def get_active_rate(self, X, batch_size):
+        return float(count_nonzero(self.fprop(X))) / self.this_layer_size / batch_size
+    
     def fprop(self, X):
         '''
         params: X - numpy ndarray

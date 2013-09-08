@@ -9,6 +9,8 @@ from dLearn.error_function import loglikehood
 from numpy import random, asarray, sqrt, inf, mean, float64, float32
 from theano import shared, tensor, function, config
 
+from dLearn.learning_model.layer.noisyRELU import NoisyRELU
+
 import cPickle
 import math
 import time
@@ -58,6 +60,11 @@ class MLP(LearningModel):
         self.learning_rate = learning_rate
         self.L1_reg = L1_reg
         self.L2_reg = L2_reg
+        
+        
+
+        
+        
         
         # setup the train_model, test_model, valid_model and params
         self._setup_models()
@@ -121,6 +128,17 @@ class MLP(LearningModel):
                                        self.test_set_y[index*self.batch_size:
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
+#         self.active_rate = None
+#         for layer in self.layers:
+#             if isinstance(layer, NoisyRELU):
+#                 outputs = layer.get_active_rate(batch_x_theano)
+#                 print outputs.__class__
+#                 self.active_rate = function(inputs=[index], outputs=outputs,
+#                                             givens={batch_x_theano:
+#                                                     self.train_set_X[index*self.batch_size:
+#                                                                     (index+1)*self.batch_size]})
+    
+                
         
         #import pdb
         #pdb.set_trace()
@@ -175,33 +193,38 @@ class MLP(LearningModel):
         assert num_batches >= 10000, 'at least 10k batches'
         validation_freq = 1000 # the number of batches to train
                                     # before the next validation
-
         
         best_valid_loss = inf
         best_iter = 0
+        
         batch = 1
         batch_index = batch - 1
+        
         n_train_batch = self.train_set_X.eval().shape[0] / self.batch_size
         n_valid_batch = self.valid_set_X.eval().shape[0] / self.batch_size
         n_test_batch = self.test_set_X.eval().shape[0] / self.batch_size
+        
+        #if self.active_rate is not None:
+        
+
+            
+        
         while batch < num_batches:
              
             batch_avg_loss = self.train_model(batch_index)
-            
-            if (batch) % validation_freq == 0:
+                            
+            if batch % validation_freq == 0:
+                print 'process active rate for noisyRELU Layer'
+                X = self.train_set_X.eval()[batch_index*self.batch_size:
+                                            (batch_index+1)*self.batch_size]
+                active_rate = self.layers[0].get_active_rate(X, self.batch_size)
+                print ('active rate for batch number %i, is %2f %%' % 
+                           (batch, active_rate * 100))
+                
+                
                 print 'validation in progress'
-#                 validation_losses = []
-#                 for i in xrange(n_valid_batch):
-#                     print i
-#                     print self.valid_set_X.eval()[i*self.batch_size : (i+1)*self.batch_size]
-# 
-#                     if math.isnan(self.valid_model(i)):
-#                         print 'nan', i
-#                         print self.valid_set_X.eval()[i*self.batch_size : (i+1)*self.batch_size]
-#                         print self.valid_set_y.eval()[i*self.batch_size : (i+1)*self.batch_size]
-#                         import pdb
-#                         pdb.set_trace()
-#                     validation_losses.append(self.valid_model(i))
+
+                
                 validation_losses = [self.valid_model(i) for i in
                                      xrange(n_valid_batch)]
                 this_valid_loss = mean(validation_losses)
@@ -211,6 +234,8 @@ class MLP(LearningModel):
                 
                 print ('batch number %i/%i, validation error %f %%' %
                 (batch, num_batches, this_valid_loss * 100.))
+                
+                
                 
                 if this_valid_loss < best_valid_loss:
                     best_valid_loss = this_valid_loss

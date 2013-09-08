@@ -39,9 +39,12 @@ def main():
     input_size = len(train_setX[0])
 
     h1 = NoisyRELU(prev_layer_size=input_size, this_layer_size=1000, noise_factor=1)
-    output_layer = Softmax(prev_layer_size=h1.this_layer_size, this_layer_size=10, W_range=[0,0], b_range=[0,0])
+    output_layer = Softmax(prev_layer_size=h1.this_layer_size, this_layer_size=10, 
+                           W_range=[0,0], b_range=[0,0])
     #y_layer = Sigmoid(prev_layer_size=h2.this_layer_size, this_layer_size=[10,1])
     
+#     import pdb
+#     pdb.set_trace()
     print 'build the model'
     mlp = MLP(input_size=input_size,
               layers=[h1, output_layer],
