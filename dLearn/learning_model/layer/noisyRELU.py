@@ -6,7 +6,7 @@ Created on Aug 25, 2013
 @author: zhenzhou
 '''
 from theano import shared, config, function, tensor
-from numpy import random, asarray, zeros, log, count_nonzero
+from numpy import random, asarray, zeros, log, count_nonzero, max, min, mean
 
 
 from dLearn.learning_model.layer import Layer
@@ -89,6 +89,21 @@ class NoisyRELU(Layer):
     
     def get_active_rate(self, X, batch_size):
         return float(count_nonzero(self.fprop(X))) / self.this_layer_size / batch_size
+    
+    def get_largest_smallest_mean_a(self, X):
+        input_theano = tensor.matrix(dtype=config.floatX)
+        output_theano = tensor.dot(input_theano, self.W_theano) + self.b_theano
+        max = tensor.max(output_theano)
+        min = tensor.min(output_theano)
+        mean = tensor.mean(output_theano)
+        
+        f = function(inputs=[input_theano], outputs=(max, min, mean))
+        return f(X)
+    
+    def get_largest_smallest_mean_noise(self):
+        u = random.uniform(low=0.001, high=0.999, size = self.this_layer_size)
+        noise = log(u/(1-u)) * self.noise_factor
+        return max(noise), min(noise), mean(noise)
     
     def fprop(self, X):
         '''

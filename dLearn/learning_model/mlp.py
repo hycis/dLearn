@@ -197,8 +197,8 @@ class MLP(LearningModel):
         best_valid_loss = inf
         best_iter = 0
         
-        batch = 1
-        batch_index = batch - 1
+        batch = 0
+        batch_index = 0
         
         n_train_batch = self.train_set_X.eval().shape[0] / self.batch_size
         n_valid_batch = self.valid_set_X.eval().shape[0] / self.batch_size
@@ -214,13 +214,27 @@ class MLP(LearningModel):
             batch_avg_loss = self.train_model(batch_index)
                             
             if batch % validation_freq == 0:
+                
+                
+                
                 print 'process active rate for noisyRELU Layer'
                 X = self.train_set_X.eval()[batch_index*self.batch_size:
                                             (batch_index+1)*self.batch_size]
+                print ('X shape before', X.shape, batch_index)
+
                 active_rate = self.layers[0].get_active_rate(X, self.batch_size)
-                print ('active rate for batch number %i, is %2f %%' % 
+                print ('active rate for batch number %i, is %f2 %%' % 
                            (batch, active_rate * 100))
                 
+                
+                #print 'get the min, max, mean of inputs'
+                print ('X shape after', X.shape)
+                (max_a, min_a, mean_a) = self.layers[0].get_largest_smallest_mean_a(X)
+                print ('max_a %f, min_a %f, mean_a %f' % (max_a, min_a, mean_a))
+                
+                (max_noise, min_noise, mean_noise) = self.layers[0].get_largest_smallest_mean_noise()
+                print ('max_noise %f, min_noise %f, mean_noise %f' % (max_noise, min_noise, mean_noise))
+
                 
                 print 'validation in progress'
 
@@ -246,8 +260,11 @@ class MLP(LearningModel):
                     this_test_loss = mean(test_losses)
                     print ('batch number %i/%i, test error %f %%' %
                     (batch, num_batches, this_test_loss * 100.))            
+            
             batch = batch + 1
-            batch_index = batch % n_train_batch - 1              
+            batch_index = batch % n_train_batch
+                        
+              
     
 
                    
