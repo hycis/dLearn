@@ -1,3 +1,5 @@
+import pdb
+pdb.set_trace()
 
 from pylearn2.datasets.mnist import MNIST
 
@@ -13,6 +15,9 @@ from dLearn.datasets import Dataset
 
 from numpy import random, asarray, split
 from theano import shared
+
+import matplotlib.pyplot as plt 
+
 
 def main():
     
@@ -55,7 +60,9 @@ def main():
               batch_size=20)
 
     print 'start training'
-    mlp.train_batch(100000)
+    mlp.train()
+    plt.plot(mlp.epoch, mlp.valid_error)
+    plt.show()
     
 if __name__ == '__main__':
     import os

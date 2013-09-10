@@ -61,7 +61,8 @@ class MLP(LearningModel):
         self.L1_reg = L1_reg
         self.L2_reg = L2_reg
         
-        
+        self.epoch = []
+        self.valid_error = []
 
         
         
@@ -143,50 +144,72 @@ class MLP(LearningModel):
         #import pdb
         #pdb.set_trace()
             
-#     def train(self):
-#         
-#         validation_freq = 1000
-#         n_train_batch = self.train_set[0].size[0]
-# 
-#         
-#         
-#         assert validation_freq < n_train_batch / 10, 'at least 10 validations per epoch'
-#         
-#         start_time = time.clock()
-#         
-#         best_valid_loss = inf
-#         improve_threshold = 0.995
-#         
-#         epoch = 0
-#         continue_training = True
-#         while continue_training:
-#             epoch += 1
-#             # loop for one epoch
-#             continue_training = False
-#             for batch_index in xrange(n_train_batch):
-#                 batch_avg_cost = self.train_model(batch_index)
-#                 
-#                 if batch_index + 1 % validation_freq == 0:
-#                     print 'self.valid_set.size[0]', self.valid_set.size[0]                            
-#                     validation_losses = [self.valid_model(i) for i
-#                                          in xrange(self.valid_set.size[0])]
-#                     this_valid_loss = mean(validation_losses)
-#                     print ('epoch %i, batch number %i/%i, validation error %f %%' %
-#                            (epoch, batch_index, n_train_batch, this_valid_loss * 100.))          
-#                     
-#                     if this_valid_loss < best_valid_loss:
-#                         best_valid_loss = this_valid_loss
-#                         best_iter = [epoch, batch_index]
-#                         
-#                         test_losses = [self.test_model(i) for i 
-#                                        in xrange(self.test_set.size[0])]
-#                         this_test_loss = mean(test_losses)
-#                         
-#                         print ('epoch %i, batch number %i/%i, test error %f %%' %
-#                                (epoch, batch_index, n_train_batch, this_test_loss * 100.))    
-# 
-#                         if best_valid_loss < improve_threshold * this_valid_loss:
-#                             continue_training = True
+    def train(self):
+         
+        validation_freq = 250
+        
+        n_train_batch = self.train_set_X.eval().shape[0] / self.batch_size
+        n_valid_batch = self.valid_set_X.eval().shape[0] / self.batch_size
+        n_test_batch = self.test_set_X.eval().shape[0] / self.batch_size
+ 
+        assert validation_freq <= n_train_batch / 10, 'at least 10 validations per epoch'
+         
+        start_time = time.clock()
+         
+        best_valid_loss = inf
+        improve_threshold = 0.995
+         
+        epoch = 0
+        continue_training = True
+        while continue_training and epoch <=2 :
+            epoch += 1
+            # loop for one epoch
+            continue_training = False
+            for batch_index in xrange(n_train_batch):
+                batch_avg_cost = self.train_model(batch_index)
+                
+                if batch_index % validation_freq == 0:
+                    #print 'self.valid_set.size[0]', self.valid_set.size[0]                            
+                    validation_losses = [self.valid_model(i) for i
+                                         in xrange(n_valid_batch)]
+                    this_valid_loss = mean(validation_losses)
+                    self.epoch.append(epoch)
+                    self.valid_error.append(this_valid_loss)
+                    
+                    print ('continue_training', continue_training)
+                    
+                    X = self.train_set_X.eval()[batch_index*self.batch_size:
+                                            (batch_index+1)*self.batch_size]
+                    
+                    active_rate = self.layers[0].get_active_rate(X, self.batch_size)
+                    print ('active rate for batch number %i, is %f2 %%' % 
+                           (batch_index, active_rate * 100)) 
+                    
+                    
+                    print ('epoch %i, batch number %i/%i, validation error %f %%' %
+                           (epoch, batch_index, n_train_batch, this_valid_loss * 100.))
+                    
+         
+                     
+                    if this_valid_loss < best_valid_loss:
+                        
+                        if this_valid_loss < improve_threshold * best_valid_loss:
+                            continue_training = True
+                        
+                        best_valid_loss = this_valid_loss
+                        best_iter = [epoch, batch_index]
+                         
+                        test_losses = [self.test_model(i) for i 
+                                       in xrange(n_test_batch)]
+                        this_test_loss = mean(test_losses)
+                         
+                        print ('epoch %i, batch number %i/%i, test error %f %%' %
+                               (epoch, batch_index, n_train_batch, this_test_loss * 100.)) 
+                        
+            #self.save()
+ 
+
+                            
                               
     def train_batch(self, num_batches):
         
@@ -220,7 +243,7 @@ class MLP(LearningModel):
                 print 'process active rate for noisyRELU Layer'
                 X = self.train_set_X.eval()[batch_index*self.batch_size:
                                             (batch_index+1)*self.batch_size]
-                print ('X shape before', X.shape, batch_index)
+                #print ('X shape before', X.shape, batch_index)
 
                 active_rate = self.layers[0].get_active_rate(X, self.batch_size)
                 print ('active rate for batch number %i, is %f2 %%' % 
@@ -228,7 +251,7 @@ class MLP(LearningModel):
                 
                 
                 #print 'get the min, max, mean of inputs'
-                print ('X shape after', X.shape)
+                #print ('X shape after', X.shape)
                 (max_a, min_a, mean_a) = self.layers[0].get_largest_smallest_mean_a(X)
                 print ('max_a %f, min_a %f, mean_a %f' % (max_a, min_a, mean_a))
                 
@@ -315,9 +338,9 @@ class MLP(LearningModel):
         pass
     
     def save(self, save_path='model.pkl'):
-        file = open(save_path, 'wb')
-        cPickle.dump(self, file)
-        file.close()
+        f = open(save_path, 'wb')
+        cPickle.dump(self, f)
+        f.close()
         
         
     
