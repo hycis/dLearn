@@ -15,7 +15,7 @@ class NoisyRELU(Layer):
     
     def __init__(self, prev_layer_size, this_layer_size, 
                  W_range=[-0.5,0.5], b_range=[-0.5,0.5], 
-                 type=['NORMAL'], noise_factor = 1):
+                 type=['NORMAL'], noise_factor=1, threshold=0):
         '''
         params:
             prev_layer_size: size of previous layer in tuples of [n1, [n2]], 
@@ -33,7 +33,7 @@ class NoisyRELU(Layer):
                 ['DROPOUT', dropout_rate] - dropout layer
                 ['MAXOUT'] - maxout layer
         '''
-
+        self.threshold = threshold
         self.prev_layer_size = prev_layer_size
         self.this_layer_size = this_layer_size
         self.type = type
@@ -85,7 +85,7 @@ class NoisyRELU(Layer):
         elif self.type[0] is 'MAXOUT':
             pass
                 
-        return tensor.maximum(0, output_theano)
+        return tensor.maximum(0, output_theano - self.threshold)
     
     def get_active_rate(self, X, batch_size):
         return float(count_nonzero(self.fprop(X))) / self.this_layer_size / batch_size

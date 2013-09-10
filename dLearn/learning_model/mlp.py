@@ -161,8 +161,7 @@ class MLP(LearningModel):
          
         epoch = 0
         continue_training = True
-        while continue_training and epoch <=2 :
-            epoch += 1
+        while continue_training and epoch <= 10:
             # loop for one epoch
             continue_training = False
             for batch_index in xrange(n_train_batch):
@@ -173,7 +172,7 @@ class MLP(LearningModel):
                     validation_losses = [self.valid_model(i) for i
                                          in xrange(n_valid_batch)]
                     this_valid_loss = mean(validation_losses)
-                    self.epoch.append(epoch)
+                    self.epoch.append(epoch*n_train_batch + batch_index)
                     self.valid_error.append(this_valid_loss)
                     
                     print ('continue_training', continue_training)
@@ -205,11 +204,7 @@ class MLP(LearningModel):
                          
                         print ('epoch %i, batch number %i/%i, test error %f %%' %
                                (epoch, batch_index, n_train_batch, this_test_loss * 100.)) 
-                        
-            #self.save()
- 
-
-                            
+            epoch += 1
                               
     def train_batch(self, num_batches):
         
