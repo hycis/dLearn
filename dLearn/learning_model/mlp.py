@@ -199,7 +199,7 @@ class MLP(LearningModel):
                         best_iter = [epoch, batch_index]
                          
                         test_losses = [self.test_model(i) for i 
-                                       in xrange(n_test_batch)]
+                                       in xrange(n_test_batch)] #test
                         this_test_loss = mean(test_losses)
                          
                         print ('epoch %i, batch number %i/%i, test error %f %%' %
