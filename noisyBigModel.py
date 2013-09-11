@@ -47,7 +47,7 @@ def main():
     
     
 
-    h1 = NoisyRELU(prev_layer_size=input_size, this_layer_size=2000, threshold=5, noise=1)
+    h1 = NoisyRELU(prev_layer_size=input_size, this_layer_size=2000, threshold=5, noise_factor=1)
     output_layer = Softmax(prev_layer_size=h1.this_layer_size, this_layer_size=10, 
                            W_range=[0,0], b_range=[0,0])
     #y_layer = Sigmoid(prev_layer_size=h2.this_layer_size, this_layer_size=[10,1])
@@ -82,5 +82,5 @@ def main():
     
 if __name__ == '__main__':
     import os
-    os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
+    #os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
     main()

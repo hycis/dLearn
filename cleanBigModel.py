@@ -83,5 +83,5 @@ def main():
     
 if __name__ == '__main__':
     import os
-    os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
+    #os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
     main()
