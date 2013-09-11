@@ -1,5 +1,6 @@
 
-
+import matplotlib
+matplotlib.use('Agg')
 import cPickle
 import matplotlib.pyplot as plt
 
