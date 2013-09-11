@@ -161,8 +161,10 @@ class MLP(LearningModel):
          
         epoch = 0
         continue_training = True
-        while continue_training and epoch <= 10:
+        while continue_training:
             # loop for one epoch
+            start_time = time.clock()
+
             continue_training = False
             for batch_index in xrange(n_train_batch):
                 batch_avg_cost = self.train_model(batch_index)
@@ -172,23 +174,26 @@ class MLP(LearningModel):
                     validation_losses = [self.valid_model(i) for i
                                          in xrange(n_valid_batch)]
                     this_valid_loss = mean(validation_losses)
+                    
                     self.epoch.append(epoch*n_train_batch + batch_index)
+                    
                     self.valid_error.append(this_valid_loss)
                     
+                    print ('epoch %i, batch number %i/%i, test error %.2f %%' %
+                            (epoch, batch_index, n_train_batch, this_valid_loss * 100.)) 
+  
                     print ('continue_training', continue_training)
                     
                     X = self.train_set_X.eval()[batch_index*self.batch_size:
                                             (batch_index+1)*self.batch_size]
                     
-                    active_rate = self.layers[0].get_active_rate(X, self.batch_size)
-                    print ('active rate for batch number %i, is %f2 %%' % 
-                           (batch_index, active_rate * 100)) 
+                    print ('extra information for batch %i' % batch_index)
                     
+                    import pdb
+                    pdb.set_trace()
+                    for layer in self.layers:
+                        layer.extension(X)
                     
-                    print ('epoch %i, batch number %i/%i, validation error %f %%' %
-                           (epoch, batch_index, n_train_batch, this_valid_loss * 100.))
-                    
-         
                      
                     if this_valid_loss < best_valid_loss:
                         
@@ -202,9 +207,13 @@ class MLP(LearningModel):
                                        in xrange(n_test_batch)] #test
                         this_test_loss = mean(test_losses)
                          
-                        print ('epoch %i, batch number %i/%i, test error %f %%' %
+                        print ('epoch %i, batch number %i/%i, test error %.2f %%' %
                                (epoch, batch_index, n_train_batch, this_test_loss * 100.)) 
+            
+            end_time = time.clock()
+            print ('epoch %i took %.2fmin' % (epoch, (end_time-start_time)/60.))
             epoch += 1
+
                               
     def train_batch(self, num_batches):
         
@@ -232,37 +241,18 @@ class MLP(LearningModel):
             batch_avg_loss = self.train_model(batch_index)
                             
             if batch % validation_freq == 0:
-                
-                
-                
-                print 'process active rate for noisyRELU Layer'
+                                
                 X = self.train_set_X.eval()[batch_index*self.batch_size:
                                             (batch_index+1)*self.batch_size]
-                #print ('X shape before', X.shape, batch_index)
-
-                active_rate = self.layers[0].get_active_rate(X, self.batch_size)
-                print ('active rate for batch number %i, is %f2 %%' % 
-                           (batch, active_rate * 100))
-                
-                
-                #print 'get the min, max, mean of inputs'
-                #print ('X shape after', X.shape)
-                (max_a, min_a, mean_a) = self.layers[0].get_largest_smallest_mean_a(X)
-                print ('max_a %f, min_a %f, mean_a %f' % (max_a, min_a, mean_a))
-                
-                (max_noise, min_noise, mean_noise) = self.layers[0].get_largest_smallest_mean_noise()
-                print ('max_noise %f, min_noise %f, mean_noise %f' % (max_noise, min_noise, mean_noise))
-
+                print ('extra information for batch %i' % batch)
+                for layer in self.layers:
+                    layer.extension(X)
                 
                 print 'validation in progress'
-
                 
                 validation_losses = [self.valid_model(i) for i in
                                      xrange(n_valid_batch)]
                 this_valid_loss = mean(validation_losses)
-                
-                #print validation_losses
-                #print 'this_valid_loss', this_valid_loss
                 
                 print ('batch number %i/%i, validation error %f %%' %
                 (batch, num_batches, this_valid_loss * 100.))

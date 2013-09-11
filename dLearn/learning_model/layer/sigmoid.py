@@ -98,4 +98,6 @@ class Sigmoid(Layer):
     def get_size(self):
         return self.size
     
+    def extension(self, X):
+        pass
     

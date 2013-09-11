@@ -117,4 +117,16 @@ class NoisyRELU(Layer):
     def get_size(self):
         return self.size
     
+    def extension(self, X):
+        
+        active_rate = self.get_active_rate(X, X.shape[0])
+        print ('active rate is %.2f %%' % (active_rate * 100))
+        
+        (max_a, min_a, mean_a) = self.get_largest_smallest_mean_a(X)
+        print ('max_a %f, min_a %f, mean_a %f' % (max_a, min_a, mean_a))
+        
+        (max_noise, min_noise, mean_noise) = self.get_largest_smallest_mean_noise()
+        print ('max_noise %f, min_noise %f, mean_noise %f' % (max_noise, min_noise, mean_noise))
+
+    
     
