@@ -189,8 +189,6 @@ class MLP(LearningModel):
                     
                     print ('extra information for batch %i' % batch_index)
                     
-                    import pdb
-                    pdb.set_trace()
                     for layer in self.layers:
                         layer.extension(X)
                     
