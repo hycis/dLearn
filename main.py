@@ -15,7 +15,7 @@ from dLearn.datasets import Dataset
 from numpy import random, asarray, split
 from theano import shared
 
-import matplotlib.pyplot as plt 
+#import matplotlib.pyplot as plt 
 
 import cPickle
 
