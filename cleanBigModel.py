@@ -79,8 +79,6 @@ def main():
     #plt.legend(plots, legends)
     #plt.savefig('plot.png')
         
-        
-    
 if __name__ == '__main__':
     import os
     #os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'

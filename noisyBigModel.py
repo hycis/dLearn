@@ -72,7 +72,7 @@ def main():
         cPickle.dump(mlp.epoch, bat)
     with open('errors_noisy.pkl', 'wb') as err:
         cPickle.dump(mlp.valid_error, err)
-    with open('legends_clean.pkl', 'wb') as leg:
+    with open('legends_noisy.pkl', 'wb') as leg:
         cPickle.dump(['2000-noisyRELU'], leg)
     
     #plt.legend(plots, legends)

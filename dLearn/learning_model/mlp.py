@@ -178,8 +178,8 @@ class MLP(LearningModel):
                     self.epoch.append(epoch*n_train_batch + batch_index)
                     
                     self.valid_error.append(this_valid_loss)
-                    
-                    print ('epoch %i, batch number %i/%i, test error %.2f %%' %
+                    print '==========================================================='
+                    print ('epoch %i, batch number %i/%i, valid error %.2f %%' %
                             (epoch, batch_index, n_train_batch, this_valid_loss * 100.)) 
   
                     print ('continue_training', continue_training)
