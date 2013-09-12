@@ -115,8 +115,8 @@ class NoisyRELU(Layer):
         return f(X)
         
     def get_size(self):
-        return self.size
-    
+        return self.this_layer_size
+
     def extension(self, X):
         
         active_rate = self.get_active_rate(X, X.shape[0])
