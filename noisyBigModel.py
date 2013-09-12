@@ -1,6 +1,7 @@
 
 
 from pylearn2.datasets.mnist import MNIST
+from pylearn2.datasets.svhn import SVHN
 
 from dLearn.learning_model.layer.sigmoid import Sigmoid
 from dLearn.learning_model.layer.softmax import Softmax
@@ -30,8 +31,8 @@ def main():
     #BUILD THE DATASET#
     ###################
     print 'build the dataset'
-    train_set = MNIST(which_set='train', one_hot=False)
-    test_set = MNIST(which_set='test', one_hot=False)
+    train_set = SVHN(which_set='train', one_hot=False)
+    test_set = SVHN(which_set='test', one_hot=False)
     
     train_setX, valid_setX = split(train_set.X, [50000], axis=0)
     train_sety, valid_sety = split(train_set.y, [50000], axis=0)
@@ -47,14 +48,19 @@ def main():
     
     
 
-    h1 = NoisyRELU(prev_layer_size=input_size, this_layer_size=2000, threshold=5, noise_factor=1)
+    h1 = NoisyRELU(prev_layer_size=input_size, this_layer_size=1000, threshold=5, noise_factor=1)
+    h2 = NoisyRELU(prev_layer_size=h1.get_size(), this_layer_size=1000, threshold=5, noise_factor=1)
+    h3 = NoisyRELU(prev_layer_size=h2.get_size(), this_layer_size=1000, threshold=5, noise_factor=1)
+
+    
+    
     output_layer = Softmax(prev_layer_size=h1.this_layer_size, this_layer_size=10, 
                            W_range=[0,0], b_range=[0,0])
     #y_layer = Sigmoid(prev_layer_size=h2.this_layer_size, this_layer_size=[10,1])
     
 
     mlp = MLP(input_size=input_size,
-              layers=[h1, output_layer],
+              layers=[h1, h2, h3, output_layer],
               train_set=[train_setX, train_sety],
               valid_set=[valid_setX, valid_sety],
               test_set=[test_set.X, test_set.y],
@@ -66,14 +72,11 @@ def main():
     mlp.train()
         #p = plt.plot(mlp.epoch, mlp.valid_error)
         #plots.append(p)
-
     
-    with open('batches_noisy.pkl', 'wb') as bat:
-        cPickle.dump(mlp.epoch, bat)
-    with open('errors_noisy.pkl', 'wb') as err:
-        cPickle.dump(mlp.valid_error, err)
-    with open('legends_noisy.pkl', 'wb') as leg:
-        cPickle.dump(['2000-noisyRELU'], leg)
+    data = [mlp.epoch, mlp.valid_error]
+    
+    with open('1000-1000-1000-noisy.pkl', 'wb') as batch_err:
+        cPickle.dump(data, batch_err)
     
     #plt.legend(plots, legends)
     #plt.savefig('plot.png')
@@ -82,5 +85,5 @@ def main():
     
 if __name__ == '__main__':
     import os
-    #os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
+    os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
     main()
