@@ -93,18 +93,16 @@ def main():
     #plt.savefig('plot.png')
         
 def plot():
-    with open('legends_clean.pkl', 'wb') as leg_clean:
-        cPickle.dump('clean-2000-tanh', leg_clean)
-    with open('legends_noisy.pkl', 'wb') as leg_noisy:
-        cPickle.dump('noisy-2000-relu', leg_noisy)
         
-    legs = ['legends_clean.pkl', 'legends_noisy.pkl']
-    errors = ['errors_clean.pkl', 'errors_noisy.pkl']
-    batches = ['batches_clean.pkl', 'batches_noisy.pkl']
-    plot_error(batches, errors, legs)
+    legends = ['clean', 'noisy']
+    list = ['']
+    plot_error(batches, errors, legends)
+
+def main2():
     
 if __name__ == '__main__':
     import os
     #os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
     #main()
+    main2()
     plot()
