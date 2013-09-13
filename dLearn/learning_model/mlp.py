@@ -130,13 +130,14 @@ class MLP(LearningModel):
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
             
-    def train(self, validation_freq=500, improve_threshold=0.995):
+    def train(self, validation_freq=500, improve_threshold=0.999):
                  
         n_train_batch = self.train_set_X.eval().shape[0] / self.batch_size
         n_valid_batch = self.valid_set_X.eval().shape[0] / self.batch_size
         n_test_batch = self.test_set_X.eval().shape[0] / self.batch_size
  
-        assert validation_freq <= n_train_batch / 10, 'at least 10 validations per epoch'
+        if validation_freq <= n_train_batch / 5:
+            validation_freq = n_train_batch / 5
          
         start_time = time.clock()
          

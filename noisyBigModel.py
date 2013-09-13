@@ -42,8 +42,9 @@ def main():
     train_setX, valid_setX = split(train_set.X, [50000], axis=0)
     train_sety, valid_sety = split(train_set.y, [50000], axis=0)
     
-    for set_y in [test_set.y, train_sety, valid_sety]:
-        set_y = nonzero(set_y)[1]
+    test_set.y = nonzero(test_set.y)[1]
+    train_sety = nonzero(train_sety)[1] 
+    valid_sety = nonzero(valid_sety)[1]
     
 
     #import pdb
@@ -93,5 +94,5 @@ def main():
     
 if __name__ == '__main__':
     import os
-    os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
+    #os.environ['PYLEARN2_DATA_PATH'] = '/Users/zhenzhou/Desktop/pylearn2/data'
     main()
