@@ -15,7 +15,7 @@ from dLearn.learning_model.mlp import MLP
 from dLearn.error_function import cross_entropy_theano, loglikehood
 from dLearn.datasets import Dataset
 
-from numpy import random, asarray, split
+from numpy import random, asarray, split, nonzero
 from theano import shared
 
 import matplotlib.pyplot as plt 
@@ -41,6 +41,9 @@ def main():
     
     train_setX, valid_setX = split(train_set.X, [50000], axis=0)
     train_sety, valid_sety = split(train_set.y, [50000], axis=0)
+    
+    for set_y in [test_set.y, train_sety, valid_sety]:
+        set_y = nonzero(set_y)[1]
     
 
     #import pdb
