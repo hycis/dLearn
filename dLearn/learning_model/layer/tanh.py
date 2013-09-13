@@ -96,7 +96,7 @@ class Tanh(Layer):
         return f(X)
         
     def get_size(self):
-        return self.size
+        return self.this_layer_size
     
     def extension(self, X):
         pass

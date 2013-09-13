@@ -1,7 +1,7 @@
 
 
 from pylearn2.datasets.mnist import MNIST
-from pylearn2.datasets.svhn import SVHN
+from pylearn2.datasets.svhn import SVHN_On_Memory
 
 from dLearn.learning_model.layer.sigmoid import Sigmoid
 from dLearn.learning_model.layer.softmax import Softmax
@@ -31,8 +31,13 @@ def main():
     #BUILD THE DATASET#
     ###################
     print 'build the dataset'
-    train_set = SVHN(which_set='train', one_hot=False)
-    test_set = SVHN(which_set='test', one_hot=False)
+    
+    import pdb
+    pdb.set_trace()
+    train_set = SVHN_On_Memory(which_set='train')
+    test_set = SVHN_On_Memory(which_set='test')
+    
+    
     
     train_setX, valid_setX = split(train_set.X, [50000], axis=0)
     train_sety, valid_sety = split(train_set.y, [50000], axis=0)
