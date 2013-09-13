@@ -47,12 +47,12 @@ class MLP(LearningModel):
         
         
         self.layers = layers
-        self.train_set_X = shared(train_set[0].astype(self.floatX))
-        self.train_set_y = shared(train_set[1].astype(self.intX))
-        self.valid_set_X = shared(valid_set[0].astype(self.floatX))
-        self.valid_set_y = shared(valid_set[1].astype(self.intX))
-        self.test_set_X = shared(test_set[0].astype(self.floatX))
-        self.test_set_y = shared(test_set[1].astype(self.intX))
+        self.train_set_X = shared(train_set[0].astype(self.floatX), borrow=True)
+        self.train_set_y = shared(train_set[1].astype(self.intX), borrow=True)
+        self.valid_set_X = shared(valid_set[0].astype(self.floatX), borrow=True)
+        self.valid_set_y = shared(valid_set[1].astype(self.intX), borrow=True)
+        self.test_set_X = shared(test_set[0].astype(self.floatX), borrow=True)
+        self.test_set_y = shared(test_set[1].astype(self.intX), borrow=True)
 
         self.batch_size = batch_size
         self.error_function = error_function
