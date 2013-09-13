@@ -130,14 +130,14 @@ class MLP(LearningModel):
                                                       (index+1)*self.batch_size]},
                                     allow_input_downcast=True)
             
-    def train(self, validation_freq=500, improve_threshold=0.999):
+    def train(self, validation_freq=500, improve_threshold=0.999, save_freq=3, save_path='bat_err.pkl'):
                  
         n_train_batch = self.train_set_X.eval().shape[0] / self.batch_size
         n_valid_batch = self.valid_set_X.eval().shape[0] / self.batch_size
         n_test_batch = self.test_set_X.eval().shape[0] / self.batch_size
  
-        if validation_freq <= n_train_batch / 5:
-            validation_freq = n_train_batch / 5
+        if validation_freq <= n_train_batch / 3:
+            validation_freq = n_train_batch / 3
          
         start_time = time.clock()
          
@@ -166,16 +166,20 @@ class MLP(LearningModel):
                     # extracting extra information from each layer
                     X = self.train_set_X.eval()[batch_index*self.batch_size:
                                             (batch_index+1)*self.batch_size]
+                    input = X
                     for layer in self.layers:
-                        layer.extension(X)
+                        layer.extension(input)
+                        output = layer.fprop(input)
+                        input = output
                     
-                    if this_valid_loss < best_valid_loss:
+                    if this_valid_loss < best_valid_loss:                        
+                        if this_valid_loss < improve_threshold * best_valid_loss:
+                            continue_training = True
                         
                         best_valid_loss = this_valid_loss
                         best_iter = [epoch, batch_index]
                         
-                        if this_valid_loss < improve_threshold * best_valid_loss:
-                            continue_training = True
+
                         
                          
                     # Get the mean test losses
@@ -194,6 +198,13 @@ class MLP(LearningModel):
             end_time = time.clock()
             print ('epoch %i took %.2fmin' % (epoch, (end_time-start_time)/60.))
             epoch += 1
+            
+            if epoch % save_freq == 0:
+                print '... saving as: ', save_path
+                with open(save_path, 'wb') as bat_err:
+                    cPickle.dump([self.batch_num, self.test_error], bat_err)
+            
+            
 
                               
     def train_batch(self, num_batches, validation_freq=500):

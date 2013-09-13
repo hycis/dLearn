@@ -118,7 +118,6 @@ class NoisyRELU(Layer):
         return self.this_layer_size
 
     def extension(self, X):
-        
         active_rate = self.get_active_rate(X, X.shape[0])
         print ('active rate is %.2f %%' % (active_rate * 100))
         
